@@ -1,6 +1,7 @@
 # Interactive Art with p5.js
 
-![Preview](preview.png)
+
+<iframe src="https://openprocessing.org/sketch/2676906/embed/" width="400" height="400"></iframe>
 
 This is an interactive art project created with p5.js. The project combines visual effects and audio interaction to create a dynamic visual experience. This project serves as a learning exercise for p5.js and is developed using the Cursor editor.
 

@@ -1,6 +1,7 @@
 # 使用 p5.js 的互動藝術
 
-![預覽](preview.png)
+
+<iframe src="https://openprocessing.org/sketch/2676906/embed/" width="400" height="400"></iframe>
 
 這是一個使用 p5.js 創作的互動式藝術專案。專案結合了視覺效果和音頻互動，創造出一個動態的視覺體驗。這個專案是作為 p5.js 的學習練習，並使用 Cursor 編輯器進行開發。
 
