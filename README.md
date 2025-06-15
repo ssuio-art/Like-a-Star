@@ -1,5 +1,7 @@
 # Interactive Art with p5.js
 
+![Preview](preview.png)
+
 This is an interactive art project created with p5.js. The project combines visual effects and audio interaction to create a dynamic visual experience. This project serves as a learning exercise for p5.js and is developed using the Cursor editor.
 
 ## Development Environment

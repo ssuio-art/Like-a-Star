@@ -36,7 +36,6 @@ yarn-error.log*
 # Image files (if you have any)
 *.jpg
 *.jpeg
-*.png
 *.gif
 *.svg
 
