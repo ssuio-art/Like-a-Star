@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Art-1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="canvas-container">
+        <div id="canvas-container"></div>
+        <div class="volume-meter" id="volume-meter"></div>
+    </div>
+    
+    <script>
+        let mic;
+        let fft;
+        let stars = [];
+        let shootingStars = [];
+        let volumeHistory = [];
+        let volumeCanvas;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.position(0, 0);
+            canvas.style('display', 'block');
+            colorMode(HSB, 360, 100, 100, 1);
+            
+            // 初始化音頻
+            mic = new p5.AudioIn();
+            mic.start();
+            fft = new p5.FFT();
+            fft.setInput(mic);
+            
+            // 創建星星
+            stars = [];
+            for (let i = 0; i < 200; i++) {
+                stars.push(new Star());
+            }
+            
+            // 初始化音量計
+            volumeCanvas = createGraphics(140, 580);
+            volumeHistory = new Array(100).fill(0);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            // 重新分布星星
+            stars = [];
+            for (let i = 0; i < 300; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        function draw() {
+            // 主要畫布繪製
+            background(220, 20, 20); // 深藍色背景
+            
+            // 獲取音頻數據
+            let spectrum = fft.analyze();
+            let level = mic.getLevel();
+            
+            // 更新音量歷史記錄
+            volumeHistory.push(level);
+            volumeHistory.shift();
+            
+            // 更新和顯示星星
+            for (let star of stars) {
+                star.update(level);
+                star.display();
+            }
+
+            // 處理流星
+            if (level > 0.2) {
+                if (random() < 0.05) {
+                    shootingStars.push(new ShootingStar(level));
+                }
+            }
+
+            // 更新和顯示流星
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                shootingStars[i].update(level);
+                shootingStars[i].display();
+                if (shootingStars[i].isDead()) {
+                    shootingStars.splice(i, 1);
+                }
+            }
+            
+            // 繪製音頻波形
+            noFill();
+            stroke(200, 80, 80, 0.5);
+            strokeWeight(2);
+            // beginShape();
+            // for (let i = 0; i < spectrum.length; i++) {
+            //     let x = map(i, 0, spectrum.length, 0, width);
+            //     let h = map(spectrum[i], 0, 255, height, 0);
+            //     vertex(x, h);
+            // }
+            // endShape();
+
+            // 繪製標題
+            textAlign(LEFT);
+            textSize(32);
+            fill(60, 0, 100);
+            text("Like A Star", 30, 50);
+            textSize(16);
+
+            // 音量計繪製
+            drawVolumeMeter();
+        }
+
+        function drawVolumeMeter() {
+            volumeCanvas.clear();
+            volumeCanvas.colorMode(HSB, 360, 100, 100, 1);
+            
+            // 音量計背景
+            volumeCanvas.fill(0, 0, 20);
+            volumeCanvas.noStroke();
+            volumeCanvas.rect(0, 0, 140, 580);
+
+            // 繪製音量歷史記錄
+            volumeCanvas.noFill();
+            volumeCanvas.stroke(120, 80, 80);
+            volumeCanvas.strokeWeight(2);
+            volumeCanvas.beginShape();
+            for (let i = 0; i < volumeHistory.length; i++) {
+                let x = map(i, 0, volumeHistory.length - 1, 10, 130);
+                let y = map(volumeHistory[i], 0, 1, 560, 20);
+                volumeCanvas.vertex(x, y);
+            }
+            volumeCanvas.endShape();
+
+            // 繪製當前音量
+            let currentVolume = volumeHistory[volumeHistory.length - 1];
+            let volumeHeight = map(currentVolume, 0, 1, 0, 540);
+            
+            // 音量條顏色根據強度變化
+            let volumeColor = map(currentVolume, 0, 1, 120, 0);
+            volumeCanvas.fill(volumeColor, 80, 80);
+            volumeCanvas.rect(20, 560 - volumeHeight, 100, volumeHeight);
+
+            // 添加標籤
+            volumeCanvas.fill(0, 0, 100);
+            volumeCanvas.textSize(12);
+            volumeCanvas.textAlign(volumeCanvas.CENTER);
+            volumeCanvas.text("音量計", 70, 15);
+        }
+
+        class Star {
+            constructor() {
+                // 使用極座標系統
+                this.angle = random(0, TWO_PI); // 初始角度
+                // 計算最大半徑（使用對角線長度的 100%）
+                let maxRadius = Math.sqrt(width * width + height * height);
+                this.radius = random(0, maxRadius); // 半徑範圍從 0 到最大
+                this.rotationSpeed = random(0.0001, 0.0005); // 改回正值，恢復順時針旋轉
+                this.size = random(2, 5);
+                this.brightness = random(30, 100);
+                this.baseSize = this.size;
+                this.baseBrightness = this.brightness;
+                this.minAudioThreshold = 0.1;
+                this.twinkleSpeed = 0;
+                this.maxTwinkleSpeed = random(0.05, 0.1);
+                this.twinkleAngle = 0;
+                this.isTwinkling = false;
+                this.twinkleStartTime = 0;
+                this.twinkleDuration = 3000; // 3秒
+                
+                // 計算初始位置
+                this.updatePosition();
+            }
+
+            updatePosition() {
+                // 從極座標轉換為笛卡爾座標，以右下角為原點
+                this.x = width - (this.radius * cos(this.angle));
+                this.y = height - (this.radius * sin(this.angle));
+            }
+
+            update(level) {
+                // 更新角度（順時針旋轉）
+                this.angle += this.rotationSpeed;
+                if (this.angle > TWO_PI) {
+                    this.angle -= TWO_PI;
+                }
+                
+                // 更新位置
+                this.updatePosition();
+
+                // 檢查是否超過閾值
+                if (level > this.minAudioThreshold) {
+                    // 開始或繼續閃爍
+                    this.isTwinkling = true;
+                    this.twinkleSpeed = this.maxTwinkleSpeed;
+                    this.twinkleStartTime = millis();
+                } else if (this.isTwinkling) {
+                    // 檢查是否已經過了3秒
+                    let currentTime = millis();
+                    if (currentTime - this.twinkleStartTime > this.twinkleDuration) {
+                        // 3秒後開始減慢
+                        this.twinkleSpeed *= 0.95;
+                        if (this.twinkleSpeed < 0.05) {
+                            this.isTwinkling = false;
+                            this.twinkleSpeed = 0;
+                        }
+                    }
+                }
+
+                // 更新閃爍角度
+                this.twinkleAngle += this.twinkleSpeed;
+
+                // 計算閃爍效果
+                let twinkleEffect = 1;
+                if (this.isTwinkling) {
+                    twinkleEffect = map(sin(this.twinkleAngle), -1, 1, 0.5, 1.5);
+                }
+
+                // 應用音頻影響
+                let audioInfluence = map(level, this.minAudioThreshold, 1, 1, 3);
+                
+                // 結合閃爍和音頻效果
+                this.brightness = this.baseBrightness * twinkleEffect * audioInfluence;
+                this.size = this.baseSize * twinkleEffect * audioInfluence;
+            }
+
+            display() {
+                noStroke();
+                // 發光效果也隨音頻強度變化
+                let glowAlpha = map(this.brightness, 0, 255, 0.1, 0.5);
+                fill(60, 0, this.brightness, glowAlpha);
+                ellipse(this.x, this.y, this.size * 2.5);
+                fill(60, 0, this.brightness);
+                ellipse(this.x, this.y, this.size);
+            }
+        }
+
+        class ShootingStar {
+            constructor(initialLevel) {
+                this.x = random(width);
+                this.y = 0;
+                this.length = map(initialLevel, 0, 1, 30, 150);
+                this.speed = map(initialLevel, 0, 1, 3, 8);
+                this.angle = random(PI/4, PI/3);
+                this.opacity = 255;
+                this.fadeSpeed = map(initialLevel, 0, 1, 2, 5);
+                this.particles = [];
+                this.createParticles();
+            }
+
+            createParticles() {
+                for (let i = 0; i < 20; i++) {
+                    this.particles.push({
+                        x: this.x,
+                        y: this.y,
+                        size: random(1, 2),
+                        opacity: 255,
+                        fadeSpeed: random(4, 8)
+                    });
+                }
+            }
+
+            update(level) {
+                this.x += cos(this.angle) * this.speed;
+                this.y += sin(this.angle) * this.speed;
+                this.opacity -= this.fadeSpeed;
+
+                for (let particle of this.particles) {
+                    particle.x = this.x - cos(this.angle) * random(this.length);
+                    particle.y = this.y - sin(this.angle) * random(this.length);
+                    particle.opacity -= particle.fadeSpeed;
+                }
+
+                this.length = map(level, 0, 1, 30, 150);
+                this.speed = map(level, 0, 1, 3, 8);
+            }
+
+            display() {
+                stroke(60, 0, 100, this.opacity);
+                strokeWeight(2);
+                line(this.x, this.y, 
+                     this.x - cos(this.angle) * this.length, 
+                     this.y - sin(this.angle) * this.length);
+
+                for (let particle of this.particles) {
+                    noStroke();
+                    fill(60, 0, 100, particle.opacity);
+                    ellipse(particle.x, particle.y, particle.size);
+                }
+            }
+
+            isDead() {
+                return this.opacity <= 0 || this.y > height || this.x > width;
+            }
+        }
+    </script>
+</body>
+</html>
