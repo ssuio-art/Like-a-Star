@@ -1,10 +1,8 @@
-# Interactive Art with p5.js
+# Interactive Audio Visualizer with p5.js
 
 ![Preview](preview.png)
 
-[Try the interactive demo on OpenProcessing](https://openprocessing.org/sketch/2676906)
-
-This is an interactive art project created with p5.js. The project combines visual effects and audio interaction to create a dynamic visual experience. This project serves as a learning exercise for p5.js and is developed using the Cursor editor.
+This is an interactive audio visualizer project created with p5.js. The project combines beautiful visual effects with audio playback to create a dynamic "Like A Star" themed experience. This project serves as a learning exercise for p5.js and is developed using the Cursor editor.
 
 ## Development Environment
 
@@ -14,58 +12,111 @@ This is an interactive art project created with p5.js. The project combines visu
 
 ## Features
 
-- **Starry Sky Effect**:
-  - Dynamic star system rotating around the bottom-right corner
-  - Smooth clockwise rotation animation
-  - Random variations in star size and brightness
-  - Full canvas coverage distribution
+### 🎵 Audio Player
+- **Audio Playback**: Full-featured audio player with play/pause controls
+- **Progress Bar**: Interactive progress bar with drag-to-seek functionality
+- **Volume Control**: Adjustable volume slider with real-time feedback
+- **Time Display**: Current time and total duration display
+- **Audio File**: Uses `audio.wav` file for playback
 
-- **Audio Interaction**:
-  - Real-time audio input visualization
-  - Star brightness changes with audio intensity
-  - Volume meter displaying current audio levels
-  - Audio-triggered twinkling effects
+### ⭐ Starry Sky Visual Effects
+- **Dynamic Star System**: 300 stars rotating around the bottom-right corner
+- **Smooth Rotation**: Clockwise rotation animation with varying speeds
+- **Audio-Reactive Stars**: Stars twinkle and change brightness based on audio intensity
+- **Twinkling System**: Stars respond to audio with natural twinkling effects
+- **Full Canvas Coverage**: Stars distributed across the entire canvas
 
-- **Visual Effects**:
-  - Star glow effects
-  - Dynamic twinkling system
-  - Smooth animation transitions
-  - Dark background enhancing visual effects
+### 🌟 Shooting Stars
+- **Audio-Triggered**: Shooting stars appear based on audio intensity
+- **Dynamic Effects**: Shooting stars with varying speeds and trails
+- **Visual Enhancement**: Adds dynamic movement to the starry sky
+
+### 📊 Audio Visualization
+- **FFT Analysis**: Real-time frequency analysis of audio
+- **Volume Meter**: Visual volume meter showing audio levels
+- **Audio Integration**: Seamless integration between audio playback and visual effects
 
 ## Tech Stack
 
-- p5.js - For creating interactive visual effects
-- Web Audio API - For audio processing and visualization
-- HTML5 & CSS3 - For page structure and styling
-- Cursor AI - For development assistance and code generation
+- **p5.js** - For creating interactive visual effects and audio processing
+- **p5.sound** - For audio playback and FFT analysis
+- **HTML5 Audio API** - For audio file handling
+- **CSS3** - For modern UI styling and animations
+- **JavaScript** - For interactive functionality
 
 ## How to Run
 
 1. Ensure your browser supports Web Audio API
-2. Open `index.html` file
-3. Allow microphone access (for audio input)
-4. Start interacting with the visual effects!
+2. Place an `audio.wav` file in the project directory
+3. Open `index.html` file in a web browser
+4. Use the audio controls to play music and watch the visual effects!
 
-## Interaction Methods
+## Audio Controls
 
-- Speak or play music to influence the visual effects
-- Observe how stars change brightness and size with audio input
-- Enjoy the rotation and twinkling effects of the stars
-- Monitor real-time feedback on the volume meter
+### Playback Controls
+- **Play/Pause Button**: Control audio playback
+- **Progress Bar**: 
+  - Click to jump to specific position
+  - Drag to seek through the audio
+  - Real-time progress display
+- **Volume Slider**: Adjust audio volume (0-100%)
+- **Time Display**: Shows current time and total duration
+
+### Visual Interaction
+- Stars automatically respond to audio intensity
+- Higher audio levels create more twinkling effects
+- Shooting stars appear during loud passages
+- Volume meter provides real-time audio feedback
+
+## Project Structure
+
+```
+p5-lab/
+├── index.html          # Main HTML file with audio controls
+├── audio.wav           # Audio file for playback
+├── style.css           # CSS styling for the interface
+├── server.py           # Local development server
+├── preview.png         # Project preview image
+└── README.md           # This file
+```
 
 ## Development Notes
 
-This project serves as a learning and creative exercise in p5.js. It demonstrates how to:
+This project demonstrates how to:
 - Create dynamic visual effects using p5.js
-- Integrate audio input and visualization
-- Implement smooth animation effects
-- Create interactive art experiences
-- Use Cursor editor for efficient development
-- Leverage AI assistance to accelerate development
+- Integrate audio playback with visual feedback
+- Implement interactive audio controls
+- Create smooth animation effects
+- Build responsive audio visualizers
+- Use modern CSS for UI design
+- Handle audio file loading and playback
 
-## Future Plans
+## Key Features Implementation
 
-- [ ] Try to add instrument and record it.
+### Audio System
+- Uses p5.sound library for audio playback
+- FFT analysis for real-time audio visualization
+- Custom audio controls with modern UI
+
+### Visual System
+- 300 dynamically positioned stars
+- Audio-reactive twinkling effects
+- Shooting star system
+- Smooth rotation animations
+
+### UI/UX
+- Modern, starry-night themed design
+- Responsive audio controls
+- Real-time feedback and displays
+- Intuitive drag-and-seek functionality
+
+## Future Enhancements
+
+- [ ] Add multiple audio file support
+- [ ] Implement audio effects and filters
+- [ ] Add more visual effect variations
+- [ ] Create preset visual themes
+- [ ] Add keyboard shortcuts for controls
 
 ## License
 
