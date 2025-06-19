@@ -30,7 +30,6 @@ yarn-error.log*
 
 # Audio files (if you have any)
 *.mp3
-*.wav
 *.ogg
 
 # Image files (if you have any)

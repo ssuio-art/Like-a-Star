@@ -7,11 +7,118 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 自定義進度條樣式 */
+        #progressSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(100, 150, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        #progressSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        #progressSlider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.6);
+        }
+
+        #progressSlider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
+        }
+
+        #progressSlider::-moz-range-track {
+            background: rgba(100, 150, 255, 0.2);
+            border-radius: 2px;
+            height: 4px;
+        }
+
+        /* 自定義音量滑桿樣式 */
+        #volumeSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(100, 150, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(74, 144, 226, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        #volumeSlider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(74, 144, 226, 0.6);
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(74, 144, 226, 0.4);
+        }
+
+        #volumeSlider::-moz-range-track {
+            background: rgba(100, 150, 255, 0.2);
+            border-radius: 3px;
+            height: 6px;
+        }
+    </style>
 </head>
 <body>
     <div class="canvas-container">
         <div id="canvas-container"></div>
         <div class="volume-meter" id="volume-meter"></div>
+    </div>
+    
+    <!-- 音訊控制面板 -->
+    <div class="audio-control" style="position: fixed; left: 20px; bottom: 20px; z-index: 9999; background: rgba(20, 30, 60, 0.85); color: white; padding: 20px; border-radius: 15px; min-width: 200px; backdrop-filter: blur(10px); border: 1px solid rgba(100, 150, 255, 0.3); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
+        <button id="playPauseBtn" style="background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%); color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; width: 100%; margin-bottom: 15px; font-weight: bold; font-size: 16px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);">
+            <span class="btn-text">載入中...</span>
+        </button>
+        
+        <!-- 進度條 -->
+        <div class="progress-control" style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span id="currentTime" style="font-size: 11px; color: #b8d4ff;">0:00</span>
+                <span id="totalTime" style="font-size: 11px; color: #b8d4ff;">0:00</span>
+            </div>
+            <input type="range" id="progressSlider" min="0" max="100" step="0.1" value="0" style="width: 100%; height: 4px; border-radius: 2px; background: rgba(100, 150, 255, 0.2); outline: none; -webkit-appearance: none; appearance: none;">
+        </div>
+        
+        <div class="volume-control">
+            <label for="volumeSlider" style="display: block; margin-bottom: 8px; font-weight: bold; color: #e6f3ff; font-size: 14px;">音量</label>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5" style="width: 100%; margin-bottom: 8px; height: 6px; border-radius: 3px; background: rgba(100, 150, 255, 0.2); outline: none; -webkit-appearance: none; appearance: none;">
+            <span id="volumeValue" style="display: block; text-align: center; color: #b8d4ff; font-size: 12px; font-weight: 500;">50%</span>
+        </div>
     </div>
     
     <script>
@@ -21,6 +128,14 @@
         let shootingStars = [];
         let volumeHistory = [];
         let volumeCanvas;
+        let audioFile; // 音訊檔案
+        let playPauseBtn; // 播放/暫停按鈕
+        let volumeSlider; // 音量滑桿
+        let volumeValue; // 音量顯示
+        let progressSlider; // 進度滑桿
+        let currentTime; // 當前時間顯示
+        let totalTime; // 總時間顯示
+        let isDraggingProgress = false; // 是否正在拖動進度條
 
         function setup() {
             let canvas = createCanvas(windowWidth, windowHeight);
@@ -28,21 +143,209 @@
             canvas.style('display', 'block');
             colorMode(HSB, 360, 100, 100, 1);
             
-            // 初始化音頻
-            mic = new p5.AudioIn();
-            mic.start();
+            console.log('Canvas 創建完成，尺寸:', width, 'x', height);
+            
+            // 初始化音頻分析
             fft = new p5.FFT();
-            fft.setInput(mic);
+            
+            // 載入音訊檔案
+            audioFile = loadSound('audio.wav', function() {
+                console.log('音訊檔案載入成功');
+                // 載入成功後設置 FFT 輸入和循環播放
+                fft.setInput(audioFile);
+                audioFile.loop(); // 設置循環播放
+                // 設置初始音量為50%（0.5 * 3 = 1.5倍音量）
+                audioFile.setVolume(1.5);
+                console.log('音訊檔案已設置為循環播放，音量50%');
+                // 更新按鈕狀態
+                if (playPauseBtn) {
+                    playPauseBtn.elt.querySelector('.btn-text').textContent = '暫停';
+                }
+                // 更新總時間顯示
+                updateTotalTime();
+            }, function(err) {
+                console.error('音訊檔案載入失敗:', err);
+                // 載入失敗時更新按鈕狀態
+                if (playPauseBtn) {
+                    playPauseBtn.elt.querySelector('.btn-text').textContent = '載入失敗';
+                }
+            });
             
             // 創建星星
             stars = [];
-            for (let i = 0; i < 200; i++) {
+            for (let i = 0; i < 300; i++) {
                 stars.push(new Star());
             }
             
             // 初始化音量計
             volumeCanvas = createGraphics(140, 580);
             volumeHistory = new Array(100).fill(0);
+            
+            // 獲取按鈕元素並添加事件監聽器
+            playPauseBtn = select('#playPauseBtn');
+            if (playPauseBtn) {
+                playPauseBtn.mousePressed(toggleAudio);
+                console.log('播放按鈕找到並設置事件監聽器');
+            } else {
+                console.error('找不到播放按鈕元素');
+            }
+            
+            // 獲取音量控制元素並添加事件監聽器
+            volumeSlider = select('#volumeSlider');
+            volumeValue = select('#volumeValue');
+            if (volumeSlider && volumeValue) {
+                volumeSlider.input(updateVolume);
+                console.log('音量控制元素找到並設置事件監聽器');
+            } else {
+                console.error('找不到音量控制元素');
+            }
+            
+            // 獲取進度控制元素並添加事件監聽器
+            progressSlider = select('#progressSlider');
+            currentTime = select('#currentTime');
+            totalTime = select('#totalTime');
+            if (progressSlider && currentTime && totalTime) {
+                progressSlider.mousePressed(() => { 
+                    isDraggingProgress = true; 
+                    console.log('開始拖動進度條');
+                });
+                progressSlider.mouseReleased(() => { 
+                    isDraggingProgress = false; 
+                    // 拖動結束時執行跳轉
+                    seekToProgress();
+                });
+                progressSlider.input(updateProgress);
+                
+                // 添加點擊事件處理
+                progressSlider.changed(() => {
+                    console.log('進度條值改變，執行跳轉');
+                    seekToProgress();
+                });
+                
+                console.log('進度控制元素找到並設置事件監聽器');
+            } else {
+                console.error('找不到進度控制元素');
+            }
+            
+            // 檢查界面元素是否可見
+            setTimeout(() => {
+                const audioControl = document.querySelector('.audio-control');
+                if (audioControl) {
+                    console.log('音訊控制面板找到:', audioControl);
+                    console.log('面板樣式:', window.getComputedStyle(audioControl));
+                } else {
+                    console.error('找不到音訊控制面板');
+                }
+            }, 1000);
+        }
+
+        function toggleAudio() {
+            if (audioFile && audioFile.isLoaded()) {
+                if (audioFile.isPlaying()) {
+                    // 如果正在播放，則暫停
+                    audioFile.pause();
+                    playPauseBtn.elt.querySelector('.btn-text').textContent = '播放';
+                    console.log('音訊已暫停');
+                } else {
+                    // 如果已暫停，則播放
+                    audioFile.play();
+                    // 不要重複設置 loop，避免重複播放
+                    playPauseBtn.elt.querySelector('.btn-text').textContent = '暫停';
+                    console.log('音訊開始播放');
+                }
+            } else {
+                console.log('音訊檔案尚未載入完成');
+            }
+        }
+
+        function updateVolume() {
+            if (audioFile && audioFile.isLoaded()) {
+                let volume = volumeSlider.value();
+                // 增加音量增益，讓最大音量更大
+                let amplifiedVolume = volume * 3; // 將音量放大3倍
+                audioFile.setVolume(amplifiedVolume);
+                volumeValue.elt.textContent = Math.round(volume * 100) + '%';
+                console.log('音量調整為:', volume, '放大後:', amplifiedVolume);
+            }
+        }
+
+        function updateProgress() {
+            if (audioFile && audioFile.isLoaded()) {
+                let progressPercent = progressSlider.value() / 100; // 將 0-100 轉換為 0-1
+                let duration = audioFile.duration();
+                let seekTime = progressPercent * duration;
+                
+                // 更新當前時間顯示（拖動時）
+                let minutes = Math.floor(seekTime / 60);
+                let seconds = Math.floor(seekTime % 60);
+                currentTime.elt.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function seekToProgress() {
+            if (audioFile && audioFile.isLoaded()) {
+                let progressPercent = progressSlider.value() / 100;
+                let duration = audioFile.duration();
+                let seekTime = progressPercent * duration;
+                
+                console.log('嘗試跳轉 - 進度百分比:', progressPercent, '總時長:', duration, '跳轉時間:', seekTime);
+                
+                try {
+                    // 確保跳轉時間在有效範圍內
+                    if (seekTime >= 0 && seekTime <= duration) {
+                        // 確保音訊檔案在播放狀態
+                        if (!audioFile.isPlaying()) {
+                            console.log('音訊檔案未播放，先開始播放');
+                            audioFile.play();
+                        }
+                        
+                        // 延遲一點時間再跳轉，確保播放狀態穩定
+                        setTimeout(() => {
+                            audioFile.seek(seekTime);
+                            console.log('成功跳轉到時間:', seekTime, '秒');
+                            
+                            // 更新當前時間顯示
+                            let minutes = Math.floor(seekTime / 60);
+                            let seconds = Math.floor(seekTime % 60);
+                            currentTime.elt.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        }, 50);
+                    } else {
+                        console.error('跳轉時間超出範圍:', seekTime, '總時長:', duration);
+                    }
+                } catch (error) {
+                    console.error('跳轉失敗:', error);
+                }
+            } else {
+                console.error('音訊檔案未載入或未準備就緒');
+            }
+        }
+
+        function updateTotalTime() {
+            if (audioFile && audioFile.isLoaded()) {
+                let duration = audioFile.duration();
+                let minutes = Math.floor(duration / 60);
+                let seconds = Math.floor(duration % 60);
+                totalTime.elt.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                console.log('音訊總時間:', duration, '秒');
+            }
+        }
+
+        function updateCurrentTime() {
+            if (audioFile && audioFile.isLoaded()) {
+                let current = audioFile.currentTime();
+                let duration = audioFile.duration();
+                
+                // 更新當前時間顯示
+                let minutes = Math.floor(current / 60);
+                let seconds = Math.floor(current % 60);
+                currentTime.elt.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 只有在不拖動時才更新進度條位置
+                if (!isDraggingProgress) {
+                    let progress = (current / duration) * 100;
+                    progressSlider.value(progress);
+                }
+            }
         }
 
         function windowResized() {
@@ -55,12 +358,33 @@
         }
 
         function draw() {
+            // 更新進度顯示
+            updateCurrentTime();
+            
             // 主要畫布繪製
             background(220, 20, 20); // 深藍色背景
             
             // 獲取音頻數據
             let spectrum = fft.analyze();
-            let level = mic.getLevel();
+            let level = 0;
+            
+            // 獲取音訊音量 - 主要使用 FFT 分析
+            if (audioFile && audioFile.isLoaded()) {
+                // 使用 FFT 分析獲取音量
+                if (spectrum.length > 0) {
+                    // 計算頻譜的平均值作為音量指標
+                    let sum = 0;
+                    for (let i = 0; i < spectrum.length; i++) {
+                        sum += spectrum[i];
+                    }
+                    level = sum / spectrum.length / 255; // 正規化到 0-1
+                }
+            }
+            
+            // 確保 level 不會是 undefined 或 null
+            if (level === undefined || level === null || isNaN(level)) {
+                level = 0;
+            }
             
             // 更新音量歷史記錄
             volumeHistory.push(level);
@@ -73,8 +397,8 @@
             }
 
             // 處理流星
-            if (level > 0.2) {
-                if (random() < 0.05) {
+            if (level > 0.25) {
+                if (random() < 0.6) {
                     shootingStars.push(new ShootingStar(level));
                 }
             }
@@ -198,11 +522,11 @@
                     // 檢查是否已經過了3秒
                     let currentTime = millis();
                     if (currentTime - this.twinkleStartTime > this.twinkleDuration) {
-                        // 3秒後開始減慢
-                        this.twinkleSpeed *= 0.95;
-                        if (this.twinkleSpeed < 0.05) {
-                            this.isTwinkling = false;
-                            this.twinkleSpeed = 0;
+                        // 3秒後慢慢減慢閃爍速度，但不停止
+                        this.twinkleSpeed *= 0.99; // 更緩慢的減速
+                        // 保持最小閃爍速度，不讓它完全停止
+                        if (this.twinkleSpeed < 0.01) {
+                            this.twinkleSpeed = 0.01;
                         }
                     }
                 }
@@ -210,10 +534,12 @@
                 // 更新閃爍角度
                 this.twinkleAngle += this.twinkleSpeed;
 
-                // 計算閃爍效果
+                // 計算閃爍效果 - 根據閃爍速度調整效果強度
                 let twinkleEffect = 1;
                 if (this.isTwinkling) {
-                    twinkleEffect = map(sin(this.twinkleAngle), -1, 1, 0.5, 1.5);
+                    // 根據閃爍速度調整閃爍幅度
+                    let twinkleAmplitude = map(this.twinkleSpeed, 0.01, this.maxTwinkleSpeed, 0.1, 0.5);
+                    twinkleEffect = map(sin(this.twinkleAngle), -1, 1, 1 - twinkleAmplitude, 1 + twinkleAmplitude);
                 }
 
                 // 應用音頻影響
